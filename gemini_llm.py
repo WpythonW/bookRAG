@@ -10,13 +10,15 @@ load_dotenv()
 
 @dataclass
 class ProxyConfig:
-    host: str = "139.28.233.160"
-    port: int = 42567
-    user: str = "user3504162"
-    password: str = "WGauOMTOpf"
+    host: str = os.getenv("PROXY_HOST", "")
+    port: int = int(os.getenv("PROXY_PORT", "0"))
+    user: str = os.getenv("PROXY_USER", "")
+    password: str = os.getenv("PROXY_PASSWORD", "")
 
     @property
     def proxy_url(self) -> str:
+        if not all([self.host, self.port, self.user, self.password]):
+            return ""
         return f"http://{self.user}:{self.password}@{self.host}:{self.port}"
 
 class GeminiLLM:
