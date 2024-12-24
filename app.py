@@ -13,14 +13,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Prompt template
 PROMPT_TEMPLATE = """
 {# Main story #}
-Story:
+# Story
 {{ story }}
 
 {# Search results #}
-Relevant text excerpts:
+# Relevant text excerpts(more detalisation)
 {{ search_results }}
 
 {# User question #}
@@ -34,28 +33,36 @@ class PromptManager:
         self.template = Template(PROMPT_TEMPLATE)
 
     def create_prompt(self, collection_name: str, query: str) -> Dict[str, Any]:
-        """
-        Creates a prompt based on story, search results and user question
-        """
         story = self.chroma_manager.get_complete_story(collection_name)
         search_results = self.chroma_manager.search(collection_name, query)
         
+        formatted_results = []
+        for i, result in enumerate(search_results, 1):
+            scene = result['scene']
+            formatted_scene = (
+                f"\n## Info for scene:\n"
+                f"Description: {scene['document']}\n"
+                f"Location: {scene['metadata']['location']}\n"
+                f"Characters: {scene['metadata']['who']}\n"
+                "### Relevant text fragments\n")
+            
+            for j, chunk in enumerate(result['chunks'], 1):
+                formatted_scene += f"#### Fragment {j}\n{chunk['document']}\n"
+                
+            formatted_results.append(formatted_scene)
+            
+        formatted_search_results = "\n".join(formatted_results)
+        
         prompt = self.template.render(
             story=story,
-            search_results=search_results,
+            search_results=formatted_search_results,
             user_question=query
         )
-        
         return {
             "prompt": prompt
         }
 
-def process_user_message(prompt: str, 
-                        collection_name: str, 
-                        prompt_manager: PromptManager) -> str:
-    """
-    Обрабатывает сообщение пользователя с учетом контекста коллекции
-    """
+def process_user_message(prompt: str, collection_name: str, prompt_manager: PromptManager) -> str:
     if not collection_name:
         return prompt
         
@@ -63,17 +70,14 @@ def process_user_message(prompt: str,
         collection_name=collection_name,
         query=prompt
     )
-    
     return prompt_data["prompt"]
 
-# Настройка страницы
 st.set_page_config(
     page_title="Gemini Chat",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# CSS для боковой панели
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -85,23 +89,17 @@ st.markdown("""
 
 st.title("Gemini Chat")
 
-# Инициализация состояния сессии
 if "active_collection" not in st.session_state:
     st.session_state.active_collection = None
-
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
 if "processed_files" not in st.session_state:
     st.session_state.processed_files = set()
-
 if "file_processing_complete" not in st.session_state:
     st.session_state.file_processing_complete = False
-
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
 
-# Инициализация менеджеров
 @st.cache_resource
 def get_chroma_manager():
     return ChromaDBManager()
@@ -110,7 +108,6 @@ def get_chroma_manager():
 def get_llm():
     return GeminiLLM()
 
-# Исправленная функция get_prompt_manager
 @st.cache_resource
 def get_prompt_manager():
     manager = get_chroma_manager()
@@ -172,7 +169,6 @@ def process_file(file_content, file_name):
         st.error(f"Ошибка при обработке: {str(e)}")
         return False
 
-# Боковая панель
 with st.sidebar:
     st.header("Настройки")
     
@@ -208,7 +204,6 @@ with st.sidebar:
     
     st.divider()
     
-    # Загрузка файлов
     st.header("Загрузка файлов")
     uploaded_files = st.file_uploader(
         "Выберите файлы",
@@ -240,12 +235,10 @@ with st.sidebar:
     elif not uploaded_files:
         st.session_state.file_processing_complete = False
 
-# Отображение истории сообщений
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["parts"][0]["text"])
 
-# Поле ввода сообщения
 if prompt := st.chat_input("Введите ваше сообщение..."):
     st.session_state.messages.append({"role": "user", "parts": [{"text": prompt}]})
     
@@ -269,8 +262,12 @@ if prompt := st.chat_input("Введите ваше сообщение..."):
                     full_prompt,
                     chat_history=st.session_state.messages[:-1]
                 )
-                logger.info(response['tokens'])
+                logger.info(f"Token stats: {response['tokens']}")
+
                 message_placeholder.markdown(response["text"])
+                
+                with st.expander("Показать промпт"):
+                    st.code(full_prompt, language="text")
                 
                 st.session_state.messages.append({
                     "role": "assistant", 
@@ -281,7 +278,7 @@ if prompt := st.chat_input("Введите ваше сообщение..."):
                 error_message = f"Ошибка: {str(e)}"
                 message_placeholder.error(error_message)
                 st.error(error_message)
-        
-        console_output = output.getvalue().strip()
-        if console_output:
-            st.info(console_output)
+            
+            console_output = output.getvalue().strip()
+            if console_output:
+                st.info(console_output)

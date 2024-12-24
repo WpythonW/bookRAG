@@ -340,9 +340,9 @@ class ChromaDBManager:
             # Убираем префикс 'search_document: ' если он есть
             clean_description = description.replace('search_document: ', '')
             
-            scene_text = f"Location: {location}\n"
-            scene_text += f"Characters: {characters}\n"
-            scene_text += f"{clean_description}\n"
+            scene_text = f"\nLocation: {location}"
+            scene_text += f"\nCharacters: {characters}"
+            scene_text += f"\n{clean_description}"
             story_parts.append(scene_text)
         
         # Объединяем все части с двойным переносом строки между сценами
