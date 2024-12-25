@@ -20,7 +20,7 @@ class ChromaDBManager:
         self,
         db_path: str = "./chroma_db",
         model_name: str = "nomic-ai/nomic-embed-text-v1.5",
-        chunk_size: int = 4000,
+        chunk_size: int = 500,
         chunk_overlap: int = 0
     ):
         """
@@ -193,8 +193,9 @@ class ChromaDBManager:
         self,
         collection_name: str,
         query: str,
-        n_scenes: int = 2,
-        n_chunks: int = 4
+        n_scenes: int = 4,
+        n_chunks: int = 2,
+        n_global_chunks: int = 5
     ) -> List[Dict[str, Any]]:
         """
         Поиск по сценам и связанным чанкам.
@@ -204,6 +205,7 @@ class ChromaDBManager:
             query: Поисковый запрос
             n_scenes: Количество сцен для поиска
             n_chunks: Количество чанков для каждой сцены
+            n_global_chunks: Количество глобально найденных чанков
             
         Returns:
             List[Dict]: Результаты поиска
@@ -268,14 +270,60 @@ class ChromaDBManager:
             
             results.append(scene_result)
         
+        # Добавляем глобальный поиск по чанкам
+        if n_global_chunks > 0:
+            global_chunks = chunks_collection.query(
+                query_embeddings=[query_vector.tolist()],
+                n_results=n_global_chunks
+            )
+            
+            # Создаем специальную "глобальную сцену"
+            global_scene = {
+                'scene': {
+                    'document': 'Global Search Results',
+                    'metadata': {
+                        'who': 'Global context',
+                        'location': 'Various locations',
+                        'key_details': ['Globally found relevant chunks'],
+                        'chunk_index': -1,  # Специальный индекс для глобального поиска
+                        'scene_index': -1
+                    }
+                },
+                'chunks': []
+            }
+            
+            # Добавляем глобально найденные чанки
+            for chunk_doc, chunk_metadata in zip(
+                global_chunks['documents'][0],
+                global_chunks['metadatas'][0]
+            ):
+                chunk_id = (
+                    chunk_metadata['parent_chunk_index'],
+                    chunk_metadata['subchunk_index']
+                )
+                
+                if chunk_id not in found_chunks:  # Проверяем уникальность
+                    found_chunks.add(chunk_id)
+                    global_scene['chunks'].append({
+                        'document': chunk_doc,
+                        'metadata': chunk_metadata
+                    })
+            
+            if global_scene['chunks']:  # Добавляем только если нашли уникальные чанки
+                results.append(global_scene)
+        
         # Сортируем результаты по глобальному индексу чанков
         for result in results:
             result['chunks'].sort(
                 key=lambda x: x['metadata']['global_chunk_index']
             )
         
+        # Сортируем сцены, оставляя глобальные результаты в конце
         results.sort(
-            key=lambda x: x['scene']['metadata']['chunk_index']
+            key=lambda x: (
+                x['scene']['metadata']['chunk_index'] == -1,  # Глобальные результаты в конце
+                x['scene']['metadata']['chunk_index']
+            )
         )
         
         return results

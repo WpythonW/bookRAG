@@ -13,14 +13,27 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+### Цитирование только по реальным фрагментам! История для конеткста
 PROMPT_TEMPLATE = """
-{# Main story #}
-# Story
+{# Main sections #}
+# Scene summaries
 {{ story }}
 
-{# Search results #}
-# Relevant text excerpts(more detalisation)
+# Relevant text excerpts
 {{ search_results }}
+
+{# Instructions for using sections #}
+When answering questions:
+1. Use "Search results" for:
+  - Direct character quotes
+  - Specific event/situation details
+  - Exact dialogue details 
+  - Text fact verification
+
+2. Use "Scene summaries" only for:
+  - Understanding overall context
+  - Clarifying event timeline
+  - Connecting different text parts
 
 {# User question #}
 Question: {{ user_question }}
