@@ -54,7 +54,7 @@ class PromptManager:
             scene = result['scene']
             formatted_scene = (
                 f"\n## Info for scene:\n"
-                f"Description: {scene['document']}\n"
+                f"Description: {scene['document'].replace('search_document:', '').strip()}\n"
                 f"Location: {scene['metadata']['location']}\n"
                 f"Characters: {scene['metadata']['who']}\n"
                 "### Relevant text fragments\n")
@@ -74,6 +74,9 @@ class PromptManager:
         return {
             "prompt": prompt
         }
+
+def clear_chat_history():
+    st.session_state.messages = []
 
 def process_user_message(prompt: str, collection_name: str, prompt_manager: PromptManager) -> str:
     if not collection_name:
@@ -214,6 +217,11 @@ with st.sidebar:
 
     if st.session_state.active_collection:
         st.success(f"Активная коллекция: {st.session_state.active_collection}")
+
+        # Добавляем кнопку очистки чата
+        if st.button("🔄 Очистить историю чата", type="secondary"):
+            clear_chat_history()
+            st.rerun()
     
     st.divider()
     
@@ -295,3 +303,5 @@ if prompt := st.chat_input("Введите ваше сообщение..."):
             console_output = output.getvalue().strip()
             if console_output:
                 st.info(console_output)
+
+
