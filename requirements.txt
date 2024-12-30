@@ -6,5 +6,4 @@ httpx
 langchain
 watchdog
 streamlit
-langchain
 python-dotenv
