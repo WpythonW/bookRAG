@@ -194,34 +194,29 @@ with st.sidebar:
     
     if collections:
         selected_collection = st.selectbox(
-            "Выберите коллекцию",
+            "Выберите книгу",
             options=collections,
             index=collections.index(st.session_state.active_collection) if st.session_state.active_collection in collections else 0
         )
         
         if selected_collection:
             st.session_state.active_collection = selected_collection
+            st.success(f"Активная книга: {st.session_state.active_collection}")
             
-            col1, col2 = st.columns([4, 1])
-            
+            # Размещаем кнопки в две колонки одинакового размера
+            col1, col2 = st.columns(2)
             with col1:
-                st.text(selected_collection)
-            
-            with col2:
-                if st.button("🗑", key=f"del_{selected_collection}"):
+                if st.button("🗑 Удалить книгу\n(саммари и векторы)", use_container_width=True):
                     manager.delete_collections(selected_collection)
                     st.session_state.active_collection = None
                     st.rerun()
+
+            with col2:
+                if st.button("🔄 Очистить историю чата", use_container_width=True):
+                    clear_chat_history()
+                    st.rerun()
     else:
         st.info("Нет существующих коллекций")
-
-    if st.session_state.active_collection:
-        st.success(f"Активная коллекция: {st.session_state.active_collection}")
-
-        # Добавляем кнопку очистки чата
-        if st.button("🔄 Очистить историю чата", type="secondary"):
-            clear_chat_history()
-            st.rerun()
     
     st.divider()
     
