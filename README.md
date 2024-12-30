@@ -57,18 +57,55 @@ GEMINI_API_KEY=your_gemini_api_key
 streamlit run app.py
 ```
 
-## 🔐 Security Notes
+## 🔄 How It Works
 
-- Never commit your `.env` file to version control
-- Keep your API keys and proxy credentials confidential
+### Preprocessing algorithm
+```mermaid
+flowchart TD
+    subgraph "Text Preprocessing"
+        A[Input Text] --> B[Split into Large Chunks<br>19k chars]
+        B --> C["LLM Summary<br><hr>• Scene descriptions<br>• Characters<br>• Locations<br>• Key details"]
+        B --> D[Split into Small Chunks<br>500 chars]
+        C & D --> E["Store in ChromaDB<br>with vectors"]
+    end
+```
+### Preprocessing algorithm
+```mermaid
+flowchart TD
+    %% User Input and Initial Context
+    A[User Query] --> B["Query Vectorization<br><hr>SentenceTransformer<br>'nomic-ai/nomic-embed-text-v1.5'"]
+    
+    Z["Complete Story Context<br><hr>ALL Scene Summaries"] --> H
 
-## 📦 Dependencies
+    %% Scene Search
+    B --> C["Scene Collection Search<br><hr>Input:<br>• Query vector<br>• n_results=2<br><hr>Output:<br>• Two most relevant scenes"]
 
-The project uses the following key technologies:
-- Streamlit
-- Gemini API
-- Python RAG techniques
+    %% Chunk Search for Each Scene
+    C --> D{"For Each Scene<br>(2 scenes)"}
+    D --> |"Scene 1"| E1["Local Chunk Search<br><hr>Input:<br>• Query vector<br>• Parent chunk filter<br>• n_results=2"]
+    D --> |"Scene 2"| E2["Local Chunk Search<br><hr>Input:<br>• Query vector<br>• Parent chunk filter<br>• n_results=2"]
 
-## 📄 License
+    %% Global Search
+    B --> F["Global Chunk Search<br><hr>Input:<br>• Query vector<br>• n_results=2<br>• No parent filter"]
 
-MIT, Apache 2.0
+    %% Results Processing
+    E1 & E2 & F --> G["Results Processing<br><hr>• Remove duplicates<br>• Sort by text order<br>• Format metadata"]
+
+    %% Prompt Generation
+    G --> H["Prompt Assembly<br><hr>Components:<br>1. ALL scene summaries (context)<br>2. Search results with:<br>  - 2 relevant scenes<br>  - 2 chunks per scene<br>  - 2 global chunks<br>3. Usage instructions<br>4. User query"]
+    
+    %% LLM Processing
+    H --> I["LLM Input Processing<br><hr>Template sections:<br>1. Scene summaries (context)<br>2. Retrieved relevant excerpts<br>3. Search instructions<br>4. User question"]
+    
+    I --> J["Gemini LLM<br>Response Generation"]
+
+    %% Styling nodes with dark background and white text
+    classDef searchOp fill:#2C3E50,stroke:#34495E,color:white
+    class C,E1,E2,F,G,H searchOp
+
+    %% LLM operations with red border
+    style I stroke:#f66,stroke-width:2px
+    style J stroke:#f66,stroke-width:2px
+    
+    %% Context style
+    style Z fill:#2C3E50,stroke:#34495E,color:white
