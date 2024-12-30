@@ -2,14 +2,46 @@
 
 ## 🚀 Project Overview
 
-BookRAG is an intelligent application that allows users to interact with book content using advanced RAG (Retrieval-Augmented Generation) techniques.
+BookRAG is an application that allows users to interact with book content using advanced RAG technique.
 
-## 📋 Prerequisites
+Key Features:
+- Text splitting and semantic chunking
+- Scene-based summarization
+- Context-aware retrieval
+- Natural language interaction
+- Support for multiple books
 
-Before you begin, ensure you have the following installed:
-- Python 3.10+
-- pip
-- venv
+## 📚 Supported Formats
+Currently supports:
+- Plain text files (.txt)
+- Maximum file size: 1MB per file
+
+## 💻 Interface Screenshot
+![Main Application Interface](screenshots/main_interface.png)
+
+The interface features:
+- Book upload functionality
+- Interactive chat window
+- Books selection and management
+
+## 🎯 RAG Validation and Testing
+Our RAG system demonstrates strong performance across key metrics:
+
+| Metric | Score |
+|--------|--------|
+| Context Recall | 83.54% |
+| LLM Context Precision (with reference) | 78.46% |
+| LLM Context Precision (no reference) | 93.90% |
+| Answer Relevancy | 81.91% |
+| Semantic Similarity | 82.63% |
+| Faithfulness | 76.52% |
+
+For detailed testing methodology and in-depth analysis, check `test_rag_system.ipynb` in the repository.
+
+## 👥 Team
+- **Andrey Ustinov** (@andrew_eu) - README, RAG System Architecture, ChromaDB Integration, LLM Integration
+- **Vladislav Larchev** (@BITASSADOR) - Testing Framework, RAG Validation, Performance Analysis
+- **Mikhail Teplov** (@dgrandison) - Frontend Development, Project Presentation, User Experience
 
 ## 🛠️ Installation
 
