@@ -101,7 +101,7 @@ flowchart TD
         C & D --> E["Store in ChromaDB<br>with vectors"]
     end
 ```
-### Preprocessing algorithm
+### Response algorithm
 ```mermaid
 flowchart TD
     %% User Input and Initial Context
